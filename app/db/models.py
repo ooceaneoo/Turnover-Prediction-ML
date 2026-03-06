@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, Float, String, DateTime, ForeignKey
+from sqlalchemy import Column, Integer, Float, String, DateTime, ForeignKey, JSON
 from sqlalchemy.orm import relationship
 from datetime import datetime
 
@@ -48,24 +48,24 @@ class PredictionRequest(Base):
 
     id = Column(Integer, primary_key=True, index=True)
     created_at = Column(DateTime, default=datetime.utcnow)
+    source = Column(String, default="api_predict")
+    payload = Column(JSON, nullable=False)
 
-    age = Column(Integer)
-    genre = Column(String)
-    revenu_mensuel = Column(Integer)
-
-    outputs = relationship("PredictionOutput", back_populates="request")
+    output = relationship("PredictionOutput", back_populates="request", uselist=False)
 
 
 class PredictionOutput(Base):
     __tablename__ = "prediction_outputs"
 
     id = Column(Integer, primary_key=True, index=True)
-    request_id = Column(Integer, ForeignKey("prediction_requests.id"))
+    request_id = Column(Integer, ForeignKey("prediction_requests.id"), unique=True)
+    created_at = Column(DateTime, default=datetime.utcnow)
 
     probability = Column(Float)
     prediction = Column(Integer)
     threshold = Column(Float)
+    model_name = Column(String)
+    test_average_precision = Column(Float)
+    response_payload = Column(JSON)
 
-    created_at = Column(DateTime, default=datetime.utcnow)
-
-    request = relationship("PredictionRequest", back_populates="outputs")
+    request = relationship("PredictionRequest", back_populates="output")

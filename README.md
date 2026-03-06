@@ -321,6 +321,16 @@ La table `prediction_outputs` est reliée à `prediction_requests` afin de conse
 ---
 
 
+# Schéma de la base de données
+
+
+Un schéma simplifié de la base PostgreSQL est disponible ici :
+
+
+[Voir le schéma de la base](docs_bdd.md)
+
+---
+
 ## Installation et configuration de la base
 
 

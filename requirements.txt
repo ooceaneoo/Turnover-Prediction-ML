@@ -6,3 +6,5 @@ imbalanced-learn
 joblib
 python-multipart
 pytest
+sqlalchemy
+psycopg2-binary

@@ -35,14 +35,13 @@ def load_artifacts() -> ModelArtifacts:
 
 def get_required_features(artifacts: ModelArtifacts) -> List[str]:
     """
-    Retourne la liste des features attendues par le pipeline (en entrée).
+    Retourne la liste des features attendues par le modèle.
     """
-    pipeline = artifacts.pipeline
-
-    if hasattr(pipeline, "feature_names_in_"):
-        return list(pipeline.feature_names_in_)
+    raw = artifacts.metrics.get("raw_feature_names")
+    if raw and isinstance(raw, list):
+        return raw
 
     raise ValueError(
-        "Pipeline does not expose feature_names_in_. "
-        "Ensure it was trained with a pandas DataFrame."
+        "raw_feature_names not found in metrics.json. "
+        "Retrain the model and regenerate metrics.json."
     )

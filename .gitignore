@@ -3,15 +3,22 @@ __pycache__/
 *.pyc
 *.pyo
 *.pyd
+
+# Virtual environments
 .venv/
 venv/
+env/
+
+# Environment variables
 .env
 
-# OS/IDE
-.DS_Store
+# IDE
 .vscode/
 .idea/
 
-# Data outputs
+# OS
+.DS_Store
+
+# Model outputs
 models/
 reports/

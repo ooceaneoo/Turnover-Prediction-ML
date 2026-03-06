@@ -2,7 +2,7 @@ from fastapi import FastAPI, HTTPException, UploadFile, File
 import pandas as pd
 import io
 
-from app.core.model import get_required_features
+from app.core.model import load_artifacts
 from app.schemas.predict import PredictRequest, PredictResponse
 
 app = FastAPI(
@@ -31,8 +31,17 @@ def predict(payload: PredictRequest):
     if artifacts is None:
         raise HTTPException(status_code=500, detail="Model not loaded")
 
+    required = artifacts.metrics.get("raw_feature_names", [])
+    missing = [c for c in required if c not in payload.features]
+
+    if missing:
+        raise HTTPException(
+            status_code=400,
+            detail=f"Missing required features: {missing}"
+        )
+
     try:
-        X = pd.DataFrame([payload.features])
+        X = pd.DataFrame([payload.features])[required]
 
         proba = artifacts.pipeline.predict_proba(X)[:, 1][0]
         pred = int(proba >= artifacts.threshold)
@@ -50,6 +59,7 @@ def predict(payload: PredictRequest):
     except Exception as e:
         raise HTTPException(status_code=400, detail=f"Prediction failed: {str(e)}")
     
+
 @app.get("/schema")
 def schema():
     global artifacts
@@ -74,6 +84,7 @@ def schema():
         "features": schema_dict,
     }
 
+
 @app.get("/example")
 def example():
     global artifacts
@@ -81,6 +92,7 @@ def example():
         raise HTTPException(status_code=500, detail="Model not loaded")
 
     return {"features": artifacts.metrics.get("example_features")}
+
 
 @app.post("/predict_csv")
 async def predict_csv(file: UploadFile = File(...)):
@@ -92,7 +104,7 @@ async def predict_csv(file: UploadFile = File(...)):
     contents = await file.read()
     df = pd.read_csv(io.BytesIO(contents), encoding="utf-8")
 
-    required = get_required_features(artifacts.pipeline)
+    required = artifacts.metrics.get("raw_feature_names", [])
     missing = [c for c in required if c not in df.columns]
 
     if missing:

@@ -42,22 +42,39 @@ models/pipeline.joblib
 Turnover-Prediction-ML
 │
 ├── app
-│   ├── main.py                # API FastAPI
+│   ├── main.py                 # API FastAPI
+│   │
 │   ├── core
-│   │   ├── config.py         # configuration des chemins
-│   │   └── model.py          # chargement du modèle
-│   └── schemas
-│       └── predict.py        # schémas Pydantic
+│   │   ├── config.py           # configuration des chemins
+│   │   └── model.py            # chargement du modèle
+│   │
+│   ├── schemas
+│   │   └── predict.py          # schémas Pydantic pour l’API
+│   │
+│   └── db
+│       ├── database.py         # connexion PostgreSQL
+│       └── models.py           # modèles SQLAlchemy
 │
 ├── src
 │   └── turnover_ml
-│       ├── data_prep.py      # préparation et nettoyage des données
-│       ├── features.py       # feature engineering
-│       └── train.py          # entraînement du modèle
+│       ├── data_prep.py        # préparation et nettoyage des données
+│       ├── features.py         # feature engineering
+│       └── train.py            # entraînement du modèle
 │
-├── tests                     # tests unitaires
+├── tests                       # tests unitaires et tests API
 │
-├── data                      # données sources
+├── data                        # données sources (CSV)
+│
+├── models                      # pipeline ML entraîné
+│
+├── reports                     # métriques du modèle
+│
+├── .github
+│   └── workflows
+│       └── ci.yml              # pipeline CI GitHub Actions
+│
+├── create_db.py                # création des tables PostgreSQL
+├── load_dataset_to_db.py       # insertion du dataset dans PostgreSQL
 │
 ├── requirements.txt
 ├── README.md
@@ -232,5 +249,153 @@ Workflow :
 * imbalanced-learn
 * FastAPI
 * Uvicorn
+* PostgreSQL
+* SQLAlchemy
 * Pytest
 * GitHub Actions
+
+
+---
+
+
+# Base de données PostgreSQL
+
+
+Le projet utilise une base de données **PostgreSQL locale** afin de garantir la **traçabilité des interactions avec le modèle de machine learning**.
+
+
+Toutes les prédictions effectuées via l’API sont enregistrées afin de conserver un historique des entrées envoyées au modèle et des sorties générées.
+
+
+---
+
+
+## Structure de la base
+
+
+La base contient trois tables principales :
+
+
+### `dataset_employes`
+
+
+Contient le dataset complet utilisé pour l'entraînement du modèle.
+
+
+Cette table permet de stocker les données dans une base relationnelle plutôt que uniquement dans des fichiers CSV.
+
+
+### `prediction_requests`
+
+
+Enregistre chaque requête envoyée au modèle via l’API.
+
+
+Chaque entrée contient :
+
+
+- la date de la requête
+- la source de la requête
+- les features envoyées au modèle (stockées en JSON)
+
+
+### `prediction_outputs`
+
+
+Enregistre les résultats produits par le modèle.
+
+
+Chaque sortie contient :
+
+
+- la probabilité prédite
+- la classe prédite
+- le seuil utilisé
+- les informations du modèle
+- la réponse complète retournée par l’API
+
+
+La table `prediction_outputs` est reliée à `prediction_requests` afin de conserver le lien entre l’entrée et la prédiction correspondante.
+
+
+---
+
+
+## Installation et configuration de la base
+
+
+### 1. Créer la base PostgreSQL
+
+
+Depuis `psql` :
+
+
+```sql
+CREATE DATABASE turnover_db;
+```
+
+### 2. Créer les tables
+
+
+Le script suivant crée les tables nécessaires :
+
+```
+python create_db.py
+```
+
+### 3. Insérer le dataset dans la base
+
+
+Le script suivant charge les fichiers CSV du projet et insère les données dans la table `dataset_employes` :
+
+```
+export PYTHONPATH="$(pwd)/src"
+python load_dataset_to_db.py
+```
+
+---
+
+## Vérification de la base
+
+Se connecter à PostgreSQL :
+
+```
+psql -U postgres -d turnover_db
+```
+
+Lister les tables :
+
+```
+\dt
+```
+
+Vérifier le dataset :
+
+```
+SELECT COUNT(*) FROM dataset_employes;
+```
+
+Vérifier les prédictions enregistrées :
+
+```
+SELECT * FROM prediction_requests;
+SELECT * FROM prediction_outputs;
+```
+
+---
+
+## Traçabilité des prédictions
+
+Lorsqu’un utilisateur appelle l’endpoint `/predict` :
+
+1. les données envoyées sont enregistrées dans `prediction_requests`
+2. le modèle effectue la prédiction
+3. la réponse du modèle est enregistrée dans `prediction_outputs`
+
+
+Cela permet :
+
+
+- de conserver un historique des prédictions
+- d’analyser les performances du modèle
+- d’assurer la traçabilité des décisions du modèle

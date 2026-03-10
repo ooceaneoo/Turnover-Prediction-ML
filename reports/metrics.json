@@ -1,0 +1,123 @@
+{
+  "model": "LogReg + UnderSampling + Preprocessing",
+  "cv_best_average_precision": 0.6423994032440202,
+  "test_average_precision": 0.5945613539862812,
+  "best_threshold_max_f1": 0.6190335641418534,
+  "best_params": {
+    "logreg__solver": "liblinear",
+    "logreg__C": 0.1
+  },
+  "train_size": 1176,
+  "test_size": 294,
+  "n_features_raw": 31,
+  "raw_feature_names": [
+    "age",
+    "genre",
+    "revenu_mensuel",
+    "statut_marital",
+    "departement",
+    "poste",
+    "nombre_experiences_precedentes",
+    "annee_experience_totale",
+    "annees_dans_l_entreprise",
+    "annees_dans_le_poste_actuel",
+    "nombre_participation_pee",
+    "nb_formations_suivies",
+    "distance_domicile_travail",
+    "niveau_education",
+    "domaine_etude",
+    "frequence_deplacement",
+    "annees_depuis_la_derniere_promotion",
+    "annes_sous_responsable_actuel",
+    "satisfaction_employee_environnement",
+    "note_evaluation_precedente",
+    "niveau_hierarchique_poste",
+    "satisfaction_employee_nature_travail",
+    "satisfaction_employee_equipe",
+    "satisfaction_employee_equilibre_pro_perso",
+    "note_evaluation_actuelle",
+    "heure_supplementaires",
+    "augmentation_salaire_num",
+    "ratio_anciennete_poste",
+    "score_satisfaction_global",
+    "stagnation_carriere",
+    "salaire_par_annee_experience"
+  ],
+  "categorical_levels": {
+    "genre": [
+      "f",
+      "m"
+    ],
+    "statut_marital": [
+      "c\u00e9libataire",
+      "divorc\u00e9(e)",
+      "mari\u00e9(e)"
+    ],
+    "departement": [
+      "commercial",
+      "consulting",
+      "ressources humaines"
+    ],
+    "poste": [
+      "assistant de direction",
+      "cadre commercial",
+      "consultant",
+      "directeur technique",
+      "manager",
+      "repr\u00e9sentant commercial",
+      "ressources humaines",
+      "senior manager",
+      "tech lead"
+    ],
+    "domaine_etude": [
+      "autre",
+      "entrepreunariat",
+      "infra & cloud",
+      "marketing",
+      "ressources humaines",
+      "transformation digitale"
+    ],
+    "frequence_deplacement": [
+      "aucun",
+      "frequent",
+      "occasionnel"
+    ],
+    "heure_supplementaires": [
+      "non",
+      "oui"
+    ]
+  },
+  "example_features": {
+    "age": 41,
+    "genre": "f",
+    "revenu_mensuel": 5993,
+    "statut_marital": "c\u00e9libataire",
+    "departement": "commercial",
+    "poste": "cadre commercial",
+    "nombre_experiences_precedentes": 8,
+    "annee_experience_totale": 8,
+    "annees_dans_l_entreprise": 6,
+    "annees_dans_le_poste_actuel": 4,
+    "nombre_participation_pee": 0,
+    "nb_formations_suivies": 0,
+    "distance_domicile_travail": 1,
+    "niveau_education": 2,
+    "domaine_etude": "infra & cloud",
+    "frequence_deplacement": "occasionnel",
+    "annees_depuis_la_derniere_promotion": 0,
+    "annes_sous_responsable_actuel": 5,
+    "satisfaction_employee_environnement": 2,
+    "note_evaluation_precedente": 3,
+    "niveau_hierarchique_poste": 2,
+    "satisfaction_employee_nature_travail": 4,
+    "satisfaction_employee_equipe": 1,
+    "satisfaction_employee_equilibre_pro_perso": 1,
+    "note_evaluation_actuelle": 3,
+    "heure_supplementaires": "oui",
+    "augmentation_salaire_num": 11.0,
+    "ratio_anciennete_poste": 0.5714285714285714,
+    "score_satisfaction_global": 2.0,
+    "stagnation_carriere": 6,
+    "salaire_par_annee_experience": 665.8888888888889
+  }
+}

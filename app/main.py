@@ -1,4 +1,5 @@
 from fastapi import FastAPI, HTTPException, UploadFile, File
+from fastapi.responses import RedirectResponse
 import pandas as pd
 import io
 
@@ -162,12 +163,6 @@ async def predict_csv(file: UploadFile = File(...)):
     except Exception as e:
         raise HTTPException(status_code=400, detail=str(e))
 
-
-@app.get("/")
+@app.get("/", include_in_schema=False)
 def root():
-    return {
-        "message": "API de prédiction du turnover en cours d'exécution",
-        "documentation": "/docs",
-        "healthcheck": "/health",
-        "example": "/example"
-    }
+    return RedirectResponse(url="/docs")

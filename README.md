@@ -1,3 +1,22 @@
+---
+title: Turnover Prediction API
+sdk: docker
+app_port: 7860
+---
+
+# Turnover Prediction API
+
+API FastAPI pour la prédiction du turnover.
+
+## Endpoints
+
+- GET /health
+- GET /example
+- POST /predict
+- POST /predict_csv
+- GET /docs
+
+
 # Turnover Prediction API
 
 API permettant de prédire le départ d’un employé à partir de données RH à l’aide d’un modèle de machine learning.

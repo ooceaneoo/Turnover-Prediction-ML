@@ -1,3 +1,30 @@
+---
+title: Turnover Prediction API
+sdk: docker
+app_port: 7860
+---
+
+# Turnover Prediction API
+
+API FastAPI pour la prédiction du turnover.
+
+## 🚀 API déployée
+
+L'API est déployée publiquement sur Hugging Face Spaces :
+
+https://oceaneo-turnover-prediction-api.hf.space/docs
+
+Vous pouvez tester directement l'API via la documentation interactive Swagger.
+
+## Endpoints
+
+- GET /health
+- GET /example
+- POST /predict
+- POST /predict_csv
+- GET /docs
+
+
 # Turnover Prediction API
 
 API permettant de prédire le départ d’un employé à partir de données RH à l’aide d’un modèle de machine learning.
@@ -33,6 +60,16 @@ Le pipeline entraîné est sauvegardé dans :
 ```
 models/pipeline.joblib
 ```
+
+---
+
+# Architecture du projet
+
+Le projet suit une architecture simple de service de machine learning :
+
+Client → API FastAPI → Pipeline de machine learning → Prédiction
+
+En environnement local, les interactions avec le modèle sont enregistrées dans une base PostgreSQL afin d'assurer la traçabilité des prédictions.
 
 ---
 
@@ -409,3 +446,17 @@ Cela permet :
 - de conserver un historique des prédictions
 - d’analyser les performances du modèle
 - d’assurer la traçabilité des décisions du modèle
+
+---
+
+# Déploiement
+
+L’API est déployée via **Hugging Face Spaces** en utilisant un environnement **Docker**.
+
+Le conteneur :
+
+- installe les dépendances Python
+- charge le pipeline de machine learning
+- expose l’API FastAPI via Uvicorn
+
+La base PostgreSQL utilisée pour la traçabilité est uniquement utilisée **en local** et est désactivée dans l’environnement de déploiement.

@@ -19,6 +19,5 @@ env/
 # OS
 .DS_Store
 
-# Model outputs
-models/
-reports/
+# Coverage
+.coverage

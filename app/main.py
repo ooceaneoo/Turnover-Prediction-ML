@@ -1,4 +1,5 @@
 from fastapi import FastAPI, HTTPException, UploadFile, File
+from fastapi.responses import RedirectResponse
 import pandas as pd
 import io
 
@@ -42,21 +43,9 @@ def predict(payload: PredictRequest):
             detail=f"Missing required features: {missing}"
         )
 
-    db = SessionLocal()
-
     try:
-        # Enregistrer l'input dans PostgreSQL
-        request_row = PredictionRequest(
-            source="api_predict",
-            payload=payload.features
-        )
-        db.add(request_row)
-        db.commit()
-        db.refresh(request_row)
-
-        # Faire la prédiction
+        # Prédiction
         X = pd.DataFrame([payload.features])[required]
-
         proba = artifacts.pipeline.predict_proba(X)[:, 1][0]
         pred = int(proba >= artifacts.threshold)
 
@@ -70,28 +59,39 @@ def predict(payload: PredictRequest):
             } if artifacts.metrics else None,
         }
 
-        # Enregistrer l'output dans PostgreSQL
-        output_row = PredictionOutput(
-            request_id=request_row.id,
-            probability=float(proba),
-            prediction=pred,
-            threshold=float(artifacts.threshold),
-            model_name=artifacts.metrics.get("model"),
-            test_average_precision=artifacts.metrics.get("test_average_precision"),
-            response_payload=response_data,
-        )
-        db.add(output_row)
-        db.commit()
+        # Enregistrer en base uniquement si une DB est configurée
+        if SessionLocal is not None:
+            db = SessionLocal()
+            try:
+                request_row = PredictionRequest(
+                    source="api_predict",
+                    payload=payload.features
+                )
+                db.add(request_row)
+                db.commit()
+                db.refresh(request_row)
 
-        # Retourner la réponse API
+                output_row = PredictionOutput(
+                    request_id=request_row.id,
+                    probability=float(proba),
+                    prediction=pred,
+                    threshold=float(artifacts.threshold),
+                    model_name=artifacts.metrics.get("model"),
+                    test_average_precision=artifacts.metrics.get("test_average_precision"),
+                    response_payload=response_data,
+                )
+                db.add(output_row)
+                db.commit()
+            except Exception:
+                db.rollback()
+                raise
+            finally:
+                db.close()
+
         return PredictResponse(**response_data)
 
     except Exception as e:
-        db.rollback()
         raise HTTPException(status_code=400, detail=f"Prediction failed: {str(e)}")
-
-    finally:
-        db.close()
 
 
 @app.get("/schema")
@@ -161,3 +161,7 @@ async def predict_csv(file: UploadFile = File(...)):
 
     except Exception as e:
         raise HTTPException(status_code=400, detail=str(e))
+
+@app.get("/", include_in_schema=False)
+def root():
+    return RedirectResponse(url="/docs")

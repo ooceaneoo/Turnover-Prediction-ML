@@ -8,12 +8,17 @@ DATABASE_URL = os.getenv(
     "postgresql://postgres:OpenClassRoom@localhost:5432/turnover_db"
 )
 
-engine = create_engine(DATABASE_URL)
+DISABLE_DB = os.getenv("DISABLE_DB", "false").lower() == "true"
 
-SessionLocal = sessionmaker(
-    autocommit=False,
-    autoflush=False,
-    bind=engine
-)
+if DISABLE_DB:
+    engine = None
+    SessionLocal = None
+else:
+    engine = create_engine(DATABASE_URL)
+    SessionLocal = sessionmaker(
+        autocommit=False,
+        autoflush=False,
+        bind=engine
+    )
 
 Base = declarative_base()

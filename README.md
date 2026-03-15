@@ -1,4 +1,3 @@
-
 ---
 title: Turnover Prediction API
 sdk: docker
@@ -271,6 +270,12 @@ Lorsqu’une base PostgreSQL est configurée, chaque appel à l’API est enregi
 
 - des **entrées envoyées au modèle**
 - des **prédictions produites**
+
+Ces informations permettent :
+
+- de suivre l’utilisation du modèle
+- d’analyser les prédictions produites
+- d’assurer la traçabilité des décisions du modèle.
 
 ⚠️ La base PostgreSQL est utilisée **uniquement en environnement local**.
 

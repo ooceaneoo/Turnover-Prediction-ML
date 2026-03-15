@@ -1,3 +1,4 @@
+
 ---
 title: Turnover Prediction API
 sdk: docker
@@ -6,9 +7,21 @@ app_port: 7860
 
 # Turnover Prediction API
 
-API FastAPI pour la prédiction du turnover.
+API permettant de prédire le départ d’un employé à partir de données RH à l’aide d’un modèle de machine learning.
 
-## 🚀 API déployée
+Le projet comprend :
+
+- un pipeline de machine learning reproductible pour l'entraînement du modèle
+- une API FastAPI exposant le modèle en service de prédiction
+- une validation des entrées avec Pydantic
+- une base PostgreSQL locale pour la traçabilité des prédictions
+- des tests unitaires et tests API avec Pytest
+- une intégration continue (CI) avec GitHub Actions
+- un déploiement Docker sur Hugging Face Spaces
+
+---
+
+## API déployée
 
 L'API est déployée publiquement sur Hugging Face Spaces :
 
@@ -16,25 +29,42 @@ https://oceaneo-turnover-prediction-api.hf.space/docs
 
 Vous pouvez tester directement l'API via la documentation interactive Swagger.
 
-## Endpoints
+Endpoints :
 
-- GET /health
-- GET /example
-- POST /predict
-- POST /predict_csv
-- GET /docs
+- `GET /health`
+- `GET /schema`
+- `GET /example`
+- `POST /predict`
+- `POST /predict_csv`
 
+---
 
-# Turnover Prediction API
+# Architecture du projet
 
-API permettant de prédire le départ d’un employé à partir de données RH à l’aide d’un modèle de machine learning.
+Le projet expose un modèle de machine learning sous forme de service API.
 
-Le projet comprend :
+```
+Client
+   │
+   ▼
+FastAPI API
+   │
+   ▼
+Machine Learning Pipeline
+(StandardScaler + OneHotEncoder + Logistic Regression)
+   │
+   ▼
+Prediction
+   │
+   ├── Response retournée à l'utilisateur
+   │
+   └── (Local uniquement)
+        ▼
+      PostgreSQL
+      (logging des requêtes et prédictions)
+```
 
-* un pipeline de machine learning reproductible
-* une API FastAPI pour exposer le modèle
-* des tests unitaires
-* une intégration continue (CI) avec GitHub Actions
+Cette architecture permet d'exposer un modèle de machine learning sous forme de service API afin de rendre les prédictions accessibles à des applications externes.
 
 ---
 
@@ -42,34 +72,19 @@ Le projet comprend :
 
 Le modèle utilisé est une **régression logistique** avec :
 
-* preprocessing
-
-  * `StandardScaler` pour les variables numériques
-  * `OneHotEncoder` pour les variables catégorielles
-* gestion du déséquilibre des classes avec **RandomUnderSampler**
-* optimisation du seuil de décision pour maximiser le **F1-score**
+- preprocessing  
+  - `StandardScaler` pour les variables numériques  
+  - `OneHotEncoder` pour les variables catégorielles  
+- gestion du déséquilibre des classes avec **RandomUnderSampler**
+- optimisation du seuil de décision pour maximiser le **F1-score**
 
 Les métriques et paramètres du modèle sont sauvegardés dans :
 
-```
-reports/metrics.json
-```
+`reports/metrics.json`
 
 Le pipeline entraîné est sauvegardé dans :
 
-```
-models/pipeline.joblib
-```
-
----
-
-# Architecture du projet
-
-Le projet suit une architecture simple de service de machine learning :
-
-Client → API FastAPI → Pipeline de machine learning → Prédiction
-
-En environnement local, les interactions avec le modèle sont enregistrées dans une base PostgreSQL afin d'assurer la traçabilité des prédictions.
+`models/pipeline.joblib`
 
 ---
 
@@ -93,18 +108,18 @@ Turnover-Prediction-ML
 │       └── models.py           # modèles SQLAlchemy
 │
 ├── src
-│   └── turnover_ml
+│   └── turnover_ml             # package contenant le pipeline de machine learning
 │       ├── data_prep.py        # préparation et nettoyage des données
 │       ├── features.py         # feature engineering
 │       └── train.py            # entraînement du modèle
 │
 ├── tests                       # tests unitaires et tests API
 │
-├── data                        # données sources (CSV)
+├── data                        # dataset source utilisé pour l'entraînement (CSV)
 │
-├── models                      # pipeline ML entraîné
+├── models                      # pipeline ML entraîné (.joblib)
 │
-├── reports                     # métriques du modèle
+├── reports                     # métriques du modèle (metrics.json)
 │
 ├── .github
 │   └── workflows
@@ -115,6 +130,7 @@ Turnover-Prediction-ML
 │
 ├── requirements.txt
 ├── README.md
+├── Dockerfile                  # image Docker utilisée pour le déploiement
 └── .gitignore
 ```
 
@@ -148,11 +164,11 @@ python -m turnover_ml.train
 
 Cela va :
 
-* charger les données
-* nettoyer le dataset
-* créer les features
-* entraîner le modèle
-* sauvegarder le pipeline et les métriques
+- charger les données
+- nettoyer le dataset
+- créer les features
+- entraîner le modèle
+- sauvegarder le pipeline et les métriques
 
 ---
 
@@ -176,13 +192,11 @@ http://127.0.0.1:8000/docs
 
 ---
 
-# Endpoints disponibles
+# Endpoints
 
 ### GET `/health`
 
 Vérifie que l’API fonctionne.
-
-Réponse :
 
 ```
 {
@@ -203,8 +217,7 @@ Exemple de requête :
   "features": {
     "age": 41,
     "genre": "f",
-    "revenu_mensuel": 5993,
-    ...
+    "revenu_mensuel": 5993
   }
 }
 ```
@@ -245,73 +258,29 @@ Chaque ligne du CSV correspond à un employé.
 
 La réponse retourne les données d’origine avec :
 
-* `probability`
-* `prediction`
+- `probability`
+- `prediction`
 
 ---
-
-# Tests
-
-Les tests unitaires couvrent :
-
-* la préparation des données
-* le feature engineering
-* le pipeline d’entraînement
-
-Pour lancer les tests :
-
-```
-pytest
-```
-
----
-
-# Intégration continue
-
-Les tests sont exécutés automatiquement via **GitHub Actions** à chaque push.
-
-Workflow :
-
-```
-.github/workflows/ci.yml
-```
-
----
-
-# Technologies utilisées
-
-* Python
-* pandas
-* scikit-learn
-* imbalanced-learn
-* FastAPI
-* Uvicorn
-* PostgreSQL
-* SQLAlchemy
-* Pytest
-* GitHub Actions
-
-
----
-
 
 # Base de données PostgreSQL
 
-
 Le projet utilise une base de données **PostgreSQL locale** afin de garantir la **traçabilité des interactions avec le modèle de machine learning**.
 
+Lorsqu’une base PostgreSQL est configurée, chaque appel à l’API est enregistré afin de conserver un historique :
 
-Toutes les prédictions effectuées via l’API sont enregistrées afin de conserver un historique des entrées envoyées au modèle et des sorties générées.
+- des **entrées envoyées au modèle**
+- des **prédictions produites**
 
+⚠️ La base PostgreSQL est utilisée **uniquement en environnement local**.
+
+Dans l’environnement de déploiement (Hugging Face Spaces), la base de données n’est pas activée.
 
 ---
 
-
 ## Structure de la base
 
-
 La base contient trois tables principales :
-
 
 ### `dataset_employes`
 
@@ -354,23 +323,17 @@ Chaque sortie contient :
 
 La table `prediction_outputs` est reliée à `prediction_requests` afin de conserver le lien entre l’entrée et la prédiction correspondante.
 
-
 ---
-
 
 # Schéma de la base de données
 
-
 Un schéma simplifié de la base PostgreSQL est disponible ici :
-
 
 [Voir le schéma de la base](docs_bdd.md)
 
 ---
 
 ## Installation et configuration de la base
-
-
 ### 1. Créer la base PostgreSQL
 
 
@@ -449,6 +412,62 @@ Cela permet :
 
 ---
 
+# Tests
+
+Le projet inclut des **tests automatisés avec Pytest** afin de vérifier le bon fonctionnement du pipeline de machine learning et de l’API.
+
+### Tests unitaires
+
+Les tests unitaires vérifient les principales fonctions du pipeline :
+
+- préparation et nettoyage des données
+- création des variables de feature engineering
+- bon fonctionnement du pipeline d’entraînement du modèle
+
+### Tests fonctionnels
+
+Les tests fonctionnels vérifient le comportement de l’API FastAPI :
+
+- disponibilité de l’endpoint `/health`
+- fonctionnement de l’endpoint `/predict`
+- validation des données d’entrée et structure des réponses JSON
+
+Pour exécuter les tests :
+
+```
+pytest
+```
+
+---
+
+# Intégration continue
+
+Les tests sont exécutés automatiquement via **GitHub Actions** à chaque push.
+
+Workflow :
+
+```
+.github/workflows/ci.yml
+```
+
+---
+
+# Technologies utilisées
+
+- Python
+- pandas
+- scikit-learn
+- imbalanced-learn
+- FastAPI
+- Uvicorn
+- PostgreSQL
+- SQLAlchemy
+- Pytest
+- GitHub Actions
+- Docker
+
+---
+
 # Déploiement
 
 L’API est déployée via **Hugging Face Spaces** en utilisant un environnement **Docker**.
@@ -460,3 +479,17 @@ Le conteneur :
 - expose l’API FastAPI via Uvicorn
 
 La base PostgreSQL utilisée pour la traçabilité est uniquement utilisée **en local** et est désactivée dans l’environnement de déploiement.
+
+
+
+
+
+
+
+
+
+
+
+
+
+

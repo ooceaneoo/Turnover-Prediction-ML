@@ -10,3 +10,6 @@ sqlalchemy
 psycopg2-binary
 httpx
 pytest-cov
+PyJWT
+pwdlib[argon2]
+python-dotenv

@@ -1,9 +1,21 @@
-from fastapi import FastAPI, HTTPException, UploadFile, File
-from fastapi.responses import RedirectResponse
-import pandas as pd
+from datetime import timedelta
 import io
 
+from dotenv import load_dotenv
+load_dotenv()
+
+from fastapi import FastAPI, HTTPException, UploadFile, File, Depends, status
+from fastapi.responses import RedirectResponse
+from fastapi.security import OAuth2PasswordRequestForm
+import pandas as pd
+
 from app.core.model import load_artifacts
+from app.core.security import (
+    authenticate_user,
+    create_access_token,
+    get_current_user,
+    ACCESS_TOKEN_EXPIRE_MINUTES,
+)
 from app.schemas.predict import PredictRequest, PredictResponse
 from app.db.database import SessionLocal
 from app.db.models import PredictionRequest, PredictionOutput
@@ -28,8 +40,32 @@ def health():
     return {"status": "ok"}
 
 
+@app.post("/token")
+def login(form_data: OAuth2PasswordRequestForm = Depends()):
+    user = authenticate_user(form_data.username, form_data.password)
+    if not user:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Identifiants incorrects",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+
+    access_token = create_access_token(
+        data={"sub": user["username"]},
+        expires_delta=timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES),
+    )
+
+    return {
+        "access_token": access_token,
+        "token_type": "bearer"
+    }
+
+
 @app.post("/predict", response_model=PredictResponse)
-def predict(payload: PredictRequest):
+def predict(
+    payload: PredictRequest,
+    current_user: dict = Depends(get_current_user)
+):
     global artifacts
     if artifacts is None:
         raise HTTPException(status_code=500, detail="Model not loaded")
@@ -95,7 +131,7 @@ def predict(payload: PredictRequest):
 
 
 @app.get("/schema")
-def schema():
+def schema(current_user: dict = Depends(get_current_user)):
     global artifacts
     if artifacts is None:
         raise HTTPException(status_code=500, detail="Model not loaded")
@@ -120,7 +156,7 @@ def schema():
 
 
 @app.get("/example")
-def example():
+def example(current_user: dict = Depends(get_current_user)):
     global artifacts
     if artifacts is None:
         raise HTTPException(status_code=500, detail="Model not loaded")
@@ -129,7 +165,10 @@ def example():
 
 
 @app.post("/predict_csv")
-async def predict_csv(file: UploadFile = File(...)):
+async def predict_csv(
+    file: UploadFile = File(...),
+    current_user: dict = Depends(get_current_user)
+):
     global artifacts
 
     if artifacts is None:

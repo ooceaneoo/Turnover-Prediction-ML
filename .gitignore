@@ -22,3 +22,5 @@ env/
 # Coverage
 .coverage
 htmlcov/
+
+generate_hash.py

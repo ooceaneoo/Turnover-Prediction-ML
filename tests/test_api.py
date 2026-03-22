@@ -1,7 +1,17 @@
+import os
+from pwdlib import PasswordHash
 from fastapi.testclient import TestClient
 
-from app.main import app
+password_hash = PasswordHash.recommended()
+test_password = "test_password_123"
+test_password_hash = password_hash.hash(test_password)
 
+os.environ["SECRET_KEY"] = "test-secret-key-at-least-32-chars"
+os.environ["ACCESS_TOKEN_EXPIRE_MINUTES"] = "30"
+os.environ["API_USERNAME"] = "test_user"
+os.environ["API_PASSWORD_HASH"] = test_password_hash
+
+from app.main import app
 
 def test_health_endpoint():
     with TestClient(app) as client:
@@ -49,7 +59,24 @@ def test_predict_endpoint_with_valid_payload():
     }
 
     with TestClient(app) as client:
-        response = client.post("/predict", json=payload)
+
+        token_response = client.post(
+            "/token",
+            data={
+                "grant_type": "password",
+                "username": "test_user",
+                "password": "test_password_123",
+            },
+        )
+
+        assert token_response.status_code == 200
+        access_token = token_response.json()["access_token"]
+
+        response = client.post(
+            "/predict",
+            json=payload,
+            headers={"Authorization": f"Bearer {access_token}"},
+        )
 
     assert response.status_code == 200
 
@@ -62,3 +89,12 @@ def test_predict_endpoint_with_valid_payload():
 
     assert isinstance(data["probability"], float)
     assert data["prediction"] in [0, 1]
+
+
+def test_predict_requires_authentication():
+    payload = {"features": {}}
+
+    with TestClient(app) as client:
+        response = client.post("/predict", json=payload)
+
+    assert response.status_code == 401
